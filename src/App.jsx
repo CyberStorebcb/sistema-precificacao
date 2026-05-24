@@ -45,6 +45,7 @@ function App() {
             roboItems={store.roboItems}
             servicoItems={store.servicoItems}
             valorHora={store.valorHora}
+            setValorHora={store.setValorHora}
             mensalidadeBase={store.mensalidadeBase}
             saveProposal={store.saveProposal}
             empresa={store.empresa}

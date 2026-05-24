@@ -231,6 +231,8 @@ export async function gerarPDF(proposal, empresa) {
     rowsMens.push([`Serviços de Implantação (${proposal.servicoSelecionados?.length || 0})`, fmt(proposal.mensalidadeServicos) + '/mês']);
   if (proposal.incluiSuporte)
     rowsMens.push(['Suporte técnico mensal', fmt(proposal.suporteMensal) + '/mês']);
+  if ((proposal.adicionalImpl || 0) > 0)
+    rowsMens.push([`Adicional por complexidade (${proposal.percAdicional}% da implantação)`, fmt(proposal.adicionalImpl) + '/mês']);
 
   rowsMens.forEach(([label, value]) => {
     doc.setFont('helvetica', 'normal');

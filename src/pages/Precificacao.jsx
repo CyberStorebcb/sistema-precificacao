@@ -27,7 +27,12 @@ function OptionRow({ item, estado, onChange, mult, accentBorder, accentText }) {
 
       <div className="shrink-0 text-right min-w-[110px]">
         {estado === 'gratis' ? (
-          <span className="text-sm font-semibold text-emerald-400">Grátis</span>
+          <>
+            <span className="text-sm font-semibold block text-emerald-300">
+              {fmt(mensalidade)}<span className="text-xs font-normal">/mês</span>
+            </span>
+            <span className="text-xs font-semibold text-emerald-400 block">impl. grátis</span>
+          </>
         ) : (
           <>
             <span className={`text-sm font-semibold block ${ativo ? accentText : 'text-gray-600'}`}>
@@ -99,7 +104,14 @@ function ServicoRow({ item, estado, onChange }) {
 
       <div className="shrink-0 text-right min-w-[120px]">
         {estado === 'gratis' ? (
-          <span className="text-sm font-semibold text-emerald-400">Grátis</span>
+          <>
+            <span className="text-xs font-semibold text-emerald-400 block">único grátis</span>
+            {temMens && (
+              <span className="text-xs text-emerald-300 block">
+                + {fmt(item.mensalidade)}<span className="font-normal">/mês</span>
+              </span>
+            )}
+          </>
         ) : (
           <>
             {temUnico && (
@@ -137,7 +149,7 @@ function ServicoRow({ item, estado, onChange }) {
   );
 }
 
-export default function Precificacao({ modules, iaItems, roboItems, servicoItems, valorHora, mensalidadeBase, saveProposal, empresa, setPage }) {
+export default function Precificacao({ modules, iaItems, roboItems, servicoItems, valorHora, setValorHora, mensalidadeBase, saveProposal, empresa, setPage }) {
   const [cliente, setCliente] = useState({ nome: '', cnpj: '', email: '', telefone: '' });
   const [porte, setPorte] = useState('pequena');
   const [modulosEstado, setModulosEstado] = useState({});
@@ -145,6 +157,10 @@ export default function Precificacao({ modules, iaItems, roboItems, servicoItems
   const [roboEstado,    setRoboEstado]    = useState({});
   const [servicoEstado, setServicoEstado] = useState({});
   const [horasImpl, setHorasImpl]         = useState(80);
+  const [implAtiva, setImplAtiva]         = useState(true);
+  const [percAdicional, setPercAdicional] = useState(10);
+  const [parcelas, setParcelas]               = useState(1);
+  const [taxaParcelamento, setTaxaParcelamento] = useState(0);
   const [incluiSuporte, setIncluiSuporte] = useState(true);
   const [observacoes, setObservacoes]     = useState('');
   const [gerando, setGerando]             = useState(false);
@@ -161,11 +177,11 @@ export default function Precificacao({ modules, iaItems, roboItems, servicoItems
   const roboSelecionados     = roboItems.filter(m => roboEstado[m.id]   === 'sim' || roboEstado[m.id]     === 'gratis');
   const servicoSelecionados  = (servicoItems || []).filter(m => servicoEstado[m.id] === 'sim' || servicoEstado[m.id] === 'gratis');
 
-  // mensalidade: soma dos módulos 'sim' × mult
+  // mensalidade: soma 'sim' e 'gratis' × mult (grátis só isenta a implantação)
   const calcMensalidade = (lista, estadoMap) =>
-    lista.reduce((s, m) => s + (estadoMap[m.id] === 'sim' ? m.mensalidade * mult : 0), 0);
+    lista.reduce((s, m) => s + (estadoMap[m.id] === 'sim' || estadoMap[m.id] === 'gratis' ? m.mensalidade * mult : 0), 0);
 
-  // implantação: soma dos módulos 'sim' × mult (grátis não cobra implantação)
+  // implantação: soma apenas 'sim' × mult (grátis não cobra implantação)
   const calcImplantacao = (lista, estadoMap) =>
     lista.reduce((s, m) => s + (estadoMap[m.id] === 'sim' ? m.implantacao * mult : 0), 0);
 
@@ -173,7 +189,7 @@ export default function Precificacao({ modules, iaItems, roboItems, servicoItems
   const mensalidadeIA      = calcMensalidade(iaItems, iaEstado);
   const mensalidadeRobos   = calcMensalidade(roboItems, roboEstado);
   const mensalidadeServicos = (servicoItems || []).reduce((s, m) =>
-    s + (servicoEstado[m.id] === 'sim' ? (m.mensalidade || 0) : 0), 0);
+    s + (servicoEstado[m.id] === 'sim' || servicoEstado[m.id] === 'gratis' ? (m.mensalidade || 0) : 0), 0);
 
   const implantacaoModulos = calcImplantacao(modules, modulosEstado);
   const implantacaoIA      = calcImplantacao(iaItems, iaEstado);
@@ -181,10 +197,11 @@ export default function Precificacao({ modules, iaItems, roboItems, servicoItems
   const valorUnicoServicos = (servicoItems || []).reduce((s, m) =>
     s + (servicoEstado[m.id] === 'sim' ? (m.valorUnico || 0) : 0), 0);
 
-  const totalImpl       = horasImpl * valorHora;
-  const suporteMensal   = incluiSuporte ? mensalidadeBase : 0;
+  const totalImpl         = implAtiva ? horasImpl * valorHora : 0;
+  const adicionalImpl     = implAtiva && horasImpl > 0 ? Math.round(totalImpl * (percAdicional / 100)) : 0;
+  const suporteMensal     = incluiSuporte ? mensalidadeBase : 0;
 
-  const totalMensalidade = mensalidadeModulos + mensalidadeIA + mensalidadeRobos + mensalidadeServicos + suporteMensal;
+  const totalMensalidade = mensalidadeModulos + mensalidadeIA + mensalidadeRobos + mensalidadeServicos + suporteMensal + adicionalImpl;
   const totalImplantacao = implantacaoModulos + implantacaoIA + implantacaoRobos + valorUnicoServicos + totalImpl;
 
   const totalItens = modulosSelecionados.length + iaSelecionados.length + roboSelecionados.length + servicoSelecionados.length;
@@ -201,10 +218,10 @@ export default function Precificacao({ modules, iaItems, roboItems, servicoItems
       iaSelecionados: iaComEstado,
       roboSelecionados: roboComEstado,
       servicoSelecionados: servicoComEstado,
-      horasImpl, incluiSuporte, observacoes,
+      horasImpl, implAtiva, percAdicional, incluiSuporte, observacoes,
       mensalidadeModulos, mensalidadeIA, mensalidadeRobos, mensalidadeServicos,
       implantacaoModulos, implantacaoIA, implantacaoRobos, valorUnicoServicos,
-      totalImpl, suporteMensal,
+      totalImpl, adicionalImpl, suporteMensal,
       totalMensalidade, totalImplantacao,
       valorHora, mensalidadeBase,
       // compat com PDF legado
@@ -315,12 +332,18 @@ export default function Precificacao({ modules, iaItems, roboItems, servicoItems
               </div>
               <h2 className="font-bold text-gray-200">Serviços de Implantação</h2>
               {(valorUnicoServicos > 0 || mensalidadeServicos > 0) && (
-                <span className="ml-auto text-xs font-semibold text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-full">
+                <span className="text-xs font-semibold text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-full">
                   {valorUnicoServicos > 0 && fmt(valorUnicoServicos) + ' único'}
                   {valorUnicoServicos > 0 && mensalidadeServicos > 0 && ' + '}
                   {mensalidadeServicos > 0 && fmt(mensalidadeServicos) + '/mês'}
                 </span>
               )}
+              <button
+                onClick={() => setServicoEstado({})}
+                className="ml-auto text-xs text-gray-500 hover:text-red-400 transition-colors px-2 py-1 rounded hover:bg-red-500/10"
+              >
+                Limpar
+              </button>
             </div>
             <p className="text-xs text-gray-500 mb-3">Itens cobrados pelo valor fixo — não sofrem multiplicador de porte.</p>
             <div className="space-y-2">
@@ -339,9 +362,17 @@ export default function Precificacao({ modules, iaItems, roboItems, servicoItems
           <div className="card">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-bold text-gray-200">Módulos do ERP</h2>
-              <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">
-                {modulosSelecionados.length} selecionado{modulosSelecionados.length !== 1 ? 's' : ''}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">
+                  {modulosSelecionados.length} selecionado{modulosSelecionados.length !== 1 ? 's' : ''}
+                </span>
+                <button
+                  onClick={() => setModulosEstado({})}
+                  className="text-xs text-gray-500 hover:text-red-400 transition-colors px-2 py-1 rounded hover:bg-red-500/10"
+                >
+                  Limpar
+                </button>
+              </div>
             </div>
             <SelectionList
               items={modules}
@@ -361,10 +392,16 @@ export default function Precificacao({ modules, iaItems, roboItems, servicoItems
               </div>
               <h2 className="font-bold text-gray-200">IA Integrada</h2>
               {mensalidadeIA > 0 && (
-                <span className="ml-auto text-xs font-semibold text-violet-400 bg-violet-500/10 px-2 py-0.5 rounded-full">
+                <span className="text-xs font-semibold text-violet-400 bg-violet-500/10 px-2 py-0.5 rounded-full">
                   {fmt(mensalidadeIA)}/mês
                 </span>
               )}
+              <button
+                onClick={() => setIaEstado({})}
+                className="ml-auto text-xs text-gray-500 hover:text-red-400 transition-colors px-2 py-1 rounded hover:bg-red-500/10"
+              >
+                Limpar
+              </button>
             </div>
             <SelectionList
               items={iaItems}
@@ -384,10 +421,16 @@ export default function Precificacao({ modules, iaItems, roboItems, servicoItems
               </div>
               <h2 className="font-bold text-gray-200">Robôs e Automação</h2>
               {mensalidadeRobos > 0 && (
-                <span className="ml-auto text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
                   {fmt(mensalidadeRobos)}/mês
                 </span>
               )}
+              <button
+                onClick={() => setRoboEstado({})}
+                className="ml-auto text-xs text-gray-500 hover:text-red-400 transition-colors px-2 py-1 rounded hover:bg-red-500/10"
+              >
+                Limpar
+              </button>
             </div>
             <SelectionList
               items={roboItems}
@@ -401,19 +444,75 @@ export default function Precificacao({ modules, iaItems, roboItems, servicoItems
 
           {/* Implantação e suporte */}
           <div className="card">
-            <h2 className="font-bold text-gray-200 mb-4">Implantação e Suporte</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold text-gray-200">Implantação e Suporte</h2>
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-gray-500">R$/hora</label>
+                <input
+                  className="input w-24 text-right py-1 text-sm"
+                  type="number" min="0" step="10"
+                  value={valorHora}
+                  onChange={e => setValorHora(Number(e.target.value))}
+                />
+              </div>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div>
-                <label className="label">Horas de implantação / treinamento</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="label mb-0">Horas de implantação / treinamento</label>
+                  <div
+                    onClick={() => setImplAtiva(!implAtiva)}
+                    className={`flex items-center gap-1.5 px-2 py-1 border rounded-md cursor-pointer transition-all text-xs ${
+                      implAtiva
+                        ? 'border-blue-500/50 bg-blue-500/10 text-blue-400'
+                        : 'border-gray-700 text-gray-500 hover:border-gray-600'
+                    }`}
+                  >
+                    {implAtiva
+                      ? <CheckSquare size={13} className="text-blue-400" />
+                      : <Square size={13} className="text-gray-500" />
+                    }
+                    {implAtiva ? 'Ativo' : 'Inativo'}
+                  </div>
+                </div>
                 <input
-                  className="input"
+                  className={`input transition-opacity ${!implAtiva ? 'opacity-40 pointer-events-none' : ''}`}
                   type="number" min="0" step="8"
                   value={horasImpl}
                   onChange={e => setHorasImpl(Number(e.target.value))}
+                  disabled={!implAtiva}
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  {horasImpl}h × {fmt(valorHora)}/h = <strong className="text-gray-300">{fmt(totalImpl)}</strong>
+                  {implAtiva
+                    ? <>{horasImpl}h × {fmt(valorHora)}/h = <strong className="text-gray-300">{fmt(totalImpl)}</strong></>
+                    : <span className="italic">Implantação não incluída</span>
+                  }
                 </p>
+                {implAtiva && horasImpl > 0 && (
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    ≈ <strong className="text-gray-400">{Math.ceil(horasImpl / 8)} dia{Math.ceil(horasImpl / 8) !== 1 ? 's' : ''}</strong> de trabalho <span className="text-gray-600">(8h/dia)</span>
+                  </p>
+                )}
+                {implAtiva && horasImpl > 0 && (
+                  <div className="mt-3 pt-3 border-t border-gray-700/50">
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs text-gray-400">Adicional mensal por complexidade</label>
+                      <span className="text-xs font-semibold text-blue-400">{fmt(adicionalImpl)}/mês</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="range" min="0" max="30" step="1"
+                        value={percAdicional}
+                        onChange={e => setPercAdicional(Number(e.target.value))}
+                        className="flex-1 accent-blue-500 cursor-pointer"
+                      />
+                      <span className="text-xs font-bold text-gray-300 w-8 text-right">{percAdicional}%</span>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1">
+                      {fmt(totalImpl)} × {percAdicional}% = {fmt(adicionalImpl)}/mês
+                    </p>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="label">Suporte técnico mensal</label>
@@ -499,6 +598,15 @@ export default function Precificacao({ modules, iaItems, roboItems, servicoItems
                   <span className="font-medium text-gray-300">{fmt(suporteMensal)}</span>
                 </div>
               )}
+              {adicionalImpl > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-blue-400 inline-block" />
+                    Complexidade ({percAdicional}%)
+                  </span>
+                  <span className="font-medium text-blue-300">{fmt(adicionalImpl)}</span>
+                </div>
+              )}
               <div className="border-t border-gray-700 pt-2 flex justify-between items-center">
                 <span className="font-bold text-gray-200 text-sm">Total mensal</span>
                 <span className="font-bold text-xl text-blue-400">{fmt(totalMensalidade)}<span className="text-xs font-normal">/mês</span></span>
@@ -532,7 +640,7 @@ export default function Precificacao({ modules, iaItems, roboItems, servicoItems
                   <span className="font-medium text-gray-300">{fmt(valorUnicoServicos)}</span>
                 </div>
               )}
-              {horasImpl > 0 && (
+              {implAtiva && horasImpl > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Treinamento ({horasImpl}h)</span>
                   <span className="font-medium text-gray-300">{fmt(totalImpl)}</span>
@@ -543,6 +651,91 @@ export default function Precificacao({ modules, iaItems, roboItems, servicoItems
                 <span className="font-bold text-xl text-amber-400">{fmt(totalImplantacao)}</span>
               </div>
             </div>
+
+            {/* Parcelamento */}
+            {totalImplantacao > 0 && (() => {
+              const taxaParc = parcelas > 1 ? taxaParcelamento : 0;
+              const totalComTaxa = Math.round(totalImplantacao * (1 + taxaParc / 100));
+              const valorParcela = Math.ceil(totalComTaxa / parcelas);
+              const taxaReais = totalComTaxa - totalImplantacao;
+              return (
+                <div className="border border-gray-700 rounded-xl p-3 mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Simulação de Parcelamento</p>
+                    <div className="flex items-center gap-2">
+                      {parcelas > 1 && taxaParcelamento === 0 && (
+                        <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                          Sem juros
+                        </span>
+                      )}
+                      {parcelas > 1 && taxaParcelamento > 0 && (
+                        <span className="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full">
+                          Taxa embutida
+                        </span>
+                      )}
+                      <span className="text-xs text-gray-500">{parcelas}x</span>
+                    </div>
+                  </div>
+
+                  {/* Slider de parcelas */}
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs text-gray-600 w-14">Parcelas</span>
+                    <input
+                      type="range" min="1" max="12" step="1"
+                      value={parcelas}
+                      onChange={e => setParcelas(Number(e.target.value))}
+                      className="flex-1 accent-amber-400 cursor-pointer"
+                    />
+                    <span className="text-xs font-bold text-gray-300 w-6 text-right">{parcelas}x</span>
+                  </div>
+
+                  {/* Slider de taxa */}
+                  {parcelas > 1 && (
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-xs text-gray-600 w-14">Taxa op.</span>
+                      <input
+                        type="range" min="0" max="10" step="0.5"
+                        value={taxaParcelamento}
+                        onChange={e => setTaxaParcelamento(Number(e.target.value))}
+                        className="flex-1 accent-blue-500 cursor-pointer"
+                      />
+                      <span className="text-xs font-bold text-gray-300 w-6 text-right">{taxaParcelamento}%</span>
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5">
+                    {parcelas === 1 ? (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400">À vista</span>
+                        <span className="font-bold text-amber-400">{fmt(totalImplantacao)}</span>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-400">Implantação em {parcelas}x</span>
+                          <span className="font-bold text-amber-400">{fmt(valorParcela)}/mês</span>
+                        </div>
+                        {taxaParcelamento > 0 && (
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-600">Você recebe (líquido)</span>
+                            <span className="text-gray-500">{fmt(totalImplantacao)} — taxa: {fmt(taxaReais)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">Mensalidade recorrente</span>
+                          <span className="text-gray-300">{fmt(totalMensalidade)}/mês</span>
+                        </div>
+                        <div className="border-t border-gray-700 pt-1.5 flex justify-between text-sm">
+                          <span className="font-semibold text-gray-200">Total nos {parcelas} primeiros meses</span>
+                          <span className="font-bold text-white">{fmt(valorParcela + totalMensalidade)}/mês</span>
+                        </div>
+                        <p className="text-xs text-gray-600 mt-1">Após {parcelas} meses: {fmt(totalMensalidade)}/mês</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="mt-5 space-y-2">
               <button
