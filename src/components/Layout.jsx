@@ -54,7 +54,7 @@ export default function Layout({ page, setPage, empresa, children }) {
       </nav>
 
       {/* Corpo: sidebar + conteúdo */}
-      <div style={{ display: 'flex', flex: 1, width: '100%', padding: '20px', gap: 20, boxSizing: 'border-box' }}>
+      <div style={{ display: 'flex', flex: 1, width: '100%', padding: '12px', gap: 16, boxSizing: 'border-box' }} className="md:p-5">
 
         {/* Sidebar — só desktop */}
         <aside className="hidden lg:block" style={{ width: 192, flexShrink: 0 }}>

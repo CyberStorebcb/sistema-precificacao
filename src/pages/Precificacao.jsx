@@ -13,7 +13,7 @@ function OptionRow({ item, estado, onChange, mult, accentBorder, accentText }) {
   const implantacao = item.implantacao * mult;
 
   return (
-    <div className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
+    <div className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 rounded-lg border transition-all ${
       estado === 'sim'    ? `${accentBorder} bg-opacity-10` :
       estado === 'gratis' ? 'border-emerald-500/40 bg-emerald-500/5' :
                             'border-gray-700/60'
@@ -22,45 +22,47 @@ function OptionRow({ item, estado, onChange, mult, accentBorder, accentText }) {
         <p className={`text-sm font-medium truncate ${ativo ? 'text-gray-100' : 'text-gray-400'}`}>
           {item.nome}
         </p>
-        {item.descricao && <p className="text-xs text-gray-500 mt-0.5">{item.descricao}</p>}
+        {item.descricao && <p className="text-xs text-gray-500 mt-0.5 hidden sm:block">{item.descricao}</p>}
       </div>
 
-      <div className="shrink-0 text-right min-w-[110px]">
-        {estado === 'gratis' ? (
-          <>
-            <span className="text-sm font-semibold block text-emerald-300">
-              {fmt(mensalidade)}<span className="text-xs font-normal">/mês</span>
-            </span>
-            <span className="text-xs font-semibold text-emerald-400 block">impl. grátis</span>
-          </>
-        ) : (
-          <>
-            <span className={`text-sm font-semibold block ${ativo ? accentText : 'text-gray-600'}`}>
-              {fmt(mensalidade)}<span className="text-xs font-normal">/mês</span>
-            </span>
-            <span className="text-xs text-gray-600 block">
-              impl. {fmt(implantacao)}
-            </span>
-          </>
-        )}
-      </div>
+      <div className="flex items-center justify-between sm:justify-end gap-3">
+        <div className="shrink-0 text-right">
+          {estado === 'gratis' ? (
+            <>
+              <span className="text-sm font-semibold block text-emerald-300">
+                {fmt(mensalidade)}<span className="text-xs font-normal">/mês</span>
+              </span>
+              <span className="text-xs font-semibold text-emerald-400 block">impl. grátis</span>
+            </>
+          ) : (
+            <>
+              <span className={`text-sm font-semibold block ${ativo ? accentText : 'text-gray-600'}`}>
+                {fmt(mensalidade)}<span className="text-xs font-normal">/mês</span>
+              </span>
+              <span className="text-xs text-gray-600 block">
+                impl. {fmt(implantacao)}
+              </span>
+            </>
+          )}
+        </div>
 
-      <div className="flex shrink-0 rounded-lg overflow-hidden border border-gray-700">
-        {[
-          { value: null,     label: 'Não',    activeClass: 'bg-gray-700 text-gray-200' },
-          { value: 'sim',    label: 'Sim',    activeClass: 'bg-blue-600 text-white' },
-          { value: 'gratis', label: 'Grátis', activeClass: 'bg-emerald-600 text-white' },
-        ].map(({ value, label, activeClass }, i) => (
-          <button
-            key={label}
-            onClick={() => onChange(item.id, value)}
-            className={`px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
-              i > 0 ? 'border-l border-gray-700' : ''
-            } ${estado === value ? activeClass : 'bg-gray-800/60 text-gray-500 hover:text-gray-300 hover:bg-gray-700/60'}`}
-          >
-            {label}
-          </button>
-        ))}
+        <div className="flex shrink-0 rounded-lg overflow-hidden border border-gray-700">
+          {[
+            { value: null,     label: 'Não',    activeClass: 'bg-gray-700 text-gray-200' },
+            { value: 'sim',    label: 'Sim',    activeClass: 'bg-blue-600 text-white' },
+            { value: 'gratis', label: 'Grátis', activeClass: 'bg-emerald-600 text-white' },
+          ].map(({ value, label, activeClass }, i) => (
+            <button
+              key={label}
+              onClick={() => onChange(item.id, value)}
+              className={`px-2.5 sm:px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
+                i > 0 ? 'border-l border-gray-700' : ''
+              } ${estado === value ? activeClass : 'bg-gray-800/60 text-gray-500 hover:text-gray-300 hover:bg-gray-700/60'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -90,7 +92,7 @@ function ServicoRow({ item, estado, onChange }) {
   const temUnico = (item.valorUnico || 0) > 0;
 
   return (
-    <div className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
+    <div className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 rounded-lg border transition-all ${
       estado === 'sim'    ? 'border-orange-500/40 bg-orange-500/5' :
       estado === 'gratis' ? 'border-emerald-500/40 bg-emerald-500/5' :
                             'border-gray-700/60'
@@ -99,10 +101,11 @@ function ServicoRow({ item, estado, onChange }) {
         <p className={`text-sm font-medium truncate ${ativo ? 'text-gray-100' : 'text-gray-400'}`}>
           {item.nome}
         </p>
-        {item.descricao && <p className="text-xs text-gray-500 mt-0.5">{item.descricao}</p>}
+        {item.descricao && <p className="text-xs text-gray-500 mt-0.5 hidden sm:block">{item.descricao}</p>}
       </div>
 
-      <div className="shrink-0 text-right min-w-[120px]">
+      <div className="flex items-center justify-between sm:justify-end gap-3">
+      <div className="shrink-0 text-right">
         {estado === 'gratis' ? (
           <>
             <span className="text-xs font-semibold text-emerald-400 block">único grátis</span>
@@ -128,22 +131,23 @@ function ServicoRow({ item, estado, onChange }) {
         )}
       </div>
 
-      <div className="flex shrink-0 rounded-lg overflow-hidden border border-gray-700">
-        {[
-          { value: null,     label: 'Não',    activeClass: 'bg-gray-700 text-gray-200' },
-          { value: 'sim',    label: 'Sim',    activeClass: 'bg-orange-600 text-white' },
-          { value: 'gratis', label: 'Grátis', activeClass: 'bg-emerald-600 text-white' },
-        ].map(({ value, label, activeClass }, i) => (
-          <button
-            key={label}
-            onClick={() => onChange(item.id, value)}
-            className={`px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
-              i > 0 ? 'border-l border-gray-700' : ''
-            } ${estado === value ? activeClass : 'bg-gray-800/60 text-gray-500 hover:text-gray-300 hover:bg-gray-700/60'}`}
-          >
-            {label}
-          </button>
-        ))}
+        <div className="flex shrink-0 rounded-lg overflow-hidden border border-gray-700">
+          {[
+            { value: null,     label: 'Não',    activeClass: 'bg-gray-700 text-gray-200' },
+            { value: 'sim',    label: 'Sim',    activeClass: 'bg-orange-600 text-white' },
+            { value: 'gratis', label: 'Grátis', activeClass: 'bg-emerald-600 text-white' },
+          ].map(({ value, label, activeClass }, i) => (
+            <button
+              key={label}
+              onClick={() => onChange(item.id, value)}
+              className={`px-2.5 sm:px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
+                i > 0 ? 'border-l border-gray-700' : ''
+              } ${estado === value ? activeClass : 'bg-gray-800/60 text-gray-500 hover:text-gray-300 hover:bg-gray-700/60'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -161,7 +165,6 @@ export default function Precificacao({ modules, iaItems, roboItems, servicoItems
   const [percAdicional, setPercAdicional] = useState(10);
   const [parcelas, setParcelas]               = useState(1);
   const [taxaParcelamento, setTaxaParcelamento] = useState(0);
-  const [incluiSuporte, setIncluiSuporte] = useState(true);
   const [observacoes, setObservacoes]     = useState('');
   const [gerando, setGerando]             = useState(false);
   const [saved, setSaved]                 = useState(false);
@@ -199,7 +202,7 @@ export default function Precificacao({ modules, iaItems, roboItems, servicoItems
 
   const totalImpl         = implAtiva ? horasImpl * valorHora : 0;
   const adicionalImpl     = implAtiva && horasImpl > 0 ? Math.round(totalImpl * (percAdicional / 100)) : 0;
-  const suporteMensal     = incluiSuporte ? mensalidadeBase : 0;
+  const suporteMensal     = mensalidadeBase;
 
   const totalMensalidade = mensalidadeModulos + mensalidadeIA + mensalidadeRobos + mensalidadeServicos + suporteMensal + adicionalImpl;
   const totalImplantacao = implantacaoModulos + implantacaoIA + implantacaoRobos + valorUnicoServicos + totalImpl;
@@ -218,7 +221,7 @@ export default function Precificacao({ modules, iaItems, roboItems, servicoItems
       iaSelecionados: iaComEstado,
       roboSelecionados: roboComEstado,
       servicoSelecionados: servicoComEstado,
-      horasImpl, implAtiva, percAdicional, incluiSuporte, observacoes,
+      horasImpl, implAtiva, percAdicional, incluiSuporte: true, observacoes,
       mensalidadeModulos, mensalidadeIA, mensalidadeRobos, mensalidadeServicos,
       implantacaoModulos, implantacaoIA, implantacaoRobos, valorUnicoServicos,
       totalImpl, adicionalImpl, suporteMensal,
@@ -260,8 +263,8 @@ export default function Precificacao({ modules, iaItems, roboItems, servicoItems
         <p className="text-gray-500 text-sm mt-1">Modelo de aluguel — taxa de implantação + mensalidade por módulo</p>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2 space-y-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="lg:col-span-2 space-y-4 order-2 lg:order-1">
 
           {/* Dados do cliente */}
           <div className="card">
@@ -516,22 +519,13 @@ export default function Precificacao({ modules, iaItems, roboItems, servicoItems
               </div>
               <div>
                 <label className="label">Suporte técnico mensal</label>
-                <div
-                  onClick={() => setIncluiSuporte(!incluiSuporte)}
-                  className={`flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${
-                    incluiSuporte
-                      ? 'border-blue-500/50 bg-blue-500/10'
-                      : 'border-gray-700 hover:border-gray-600'
-                  }`}
-                >
-                  {incluiSuporte
-                    ? <CheckSquare size={18} className="text-blue-400" />
-                    : <Square size={18} className="text-gray-600" />
-                  }
-                  <div>
-                    <p className="text-sm font-medium text-gray-200">Incluir suporte mensal</p>
+                <div className="flex items-center gap-3 p-3 border-2 rounded-lg border-blue-500/50 bg-blue-500/10">
+                  <CheckSquare size={18} className="text-blue-400 shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-200">Suporte mensal obrigatório</p>
                     <p className="text-xs text-gray-500">SLA de atendimento + atualizações — {fmt(mensalidadeBase)}/mês</p>
                   </div>
+                  <span className="text-xs text-blue-400/60 font-medium">Incluso</span>
                 </div>
               </div>
             </div>
@@ -549,8 +543,8 @@ export default function Precificacao({ modules, iaItems, roboItems, servicoItems
         </div>
 
         {/* Coluna direita: resumo */}
-        <div className="space-y-4">
-          <div className="card sticky top-6">
+        <div className="space-y-4 order-1 lg:order-2">
+          <div className="card lg:sticky lg:top-6">
             <h2 className="font-bold text-gray-200 mb-4">Resumo da Proposta</h2>
 
             {/* Mensalidade */}
@@ -592,12 +586,10 @@ export default function Precificacao({ modules, iaItems, roboItems, servicoItems
                   <span className="font-medium text-orange-300">{fmt(mensalidadeServicos)}</span>
                 </div>
               )}
-              {incluiSuporte && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Suporte técnico</span>
-                  <span className="font-medium text-gray-300">{fmt(suporteMensal)}</span>
-                </div>
-              )}
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Suporte técnico</span>
+                <span className="font-medium text-gray-300">{fmt(suporteMensal)}</span>
+              </div>
               {adicionalImpl > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500 flex items-center gap-1.5">
